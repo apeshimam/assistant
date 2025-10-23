@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Daily Planning · Personal Planner{% endblock %}
+{% block content %}
+<section class="grid two" style="margin-bottom: 1.5rem">
+  <div class="panel">
+    <h2>Morning Check-in</h2>
+    <p class="muted">Anchor the day with energy, focus, and blockers. Lists accept comma or newline separated entries.</p>
+    <form method="post" action="/daily/morning">
+      <div>
+        <label for="energy_level">Energy level</label>
+        <select id="energy_level" name="energy_level" required>
+          {% for level in range(1, 6) %}
+          <option value="{{ level }}" {% if form_state.get('energy_level', '3') == level|string %}selected{% endif %}>
+            {{ level }} / 5
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="intended_focus">Intended focus</label>
+        <input
+          type="text"
+          id="intended_focus"
+          name="intended_focus"
+          placeholder="What's the primary arc of today?"
+          value="{{ form_state.get('intended_focus', '') }}"
+          required
+        />
+      </div>
+      <div>
+        <label for="top_of_mind">Top of mind</label>
+        <textarea id="top_of_mind" name="top_of_mind" placeholder="Ideas, concerns, conversations">{{ form_state.get('top_of_mind', '') }}</textarea>
+      </div>
+      <div>
+        <label for="blockers">Potential blockers</label>
+        <textarea id="blockers" name="blockers" placeholder="Where might things get stuck?">{{ form_state.get('blockers', '') }}</textarea>
+      </div>
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
+        <button type="submit">Generate plan</button>
+        <a class="pill" href="/api/daily/checkin" title="View JSON endpoint" style="align-self: center">API</a>
+      </div>
+    </form>
+  </div>
+  <div class="panel">
+    <h2>Today's Context</h2>
+    <p class="muted" style="margin-bottom: 0.75rem">{{ today.strftime('%A, %B %d, %Y') }}</p>
+    {% if tasks_today %}
+    <h3>Tasks due today</h3>
+    <ul>
+      {% for task in tasks_today %}
+      <li>{{ task.title }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No tasks scheduled today — pick one meaningful action.</p>
+    {% endif %}
+
+    {% if upcoming_tasks %}
+    <h3 style="margin-top: 1.5rem">Upcoming</h3>
+    <ul>
+      {% for task in upcoming_tasks %}
+      <li>{{ task.due_date.strftime('%a %d %b') if task.due_date }} · {{ task.title }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if session and session.morning_context %}
+    <h3 style="margin-top: 1.5rem">Morning snapshot</h3>
+    <ul class="inline">
+      <li class="pill">Energy {{ session.morning_context.energy_level }}/5</li>
+      <li class="pill">Focus: {{ session.morning_context.intended_focus }}</li>
+      {% for item in session.morning_context.top_of_mind %}
+      <li class="pill">{{ item }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if events %}
+    <h3 style="margin-top: 1.5rem">Recent events</h3>
+    <ul>
+      {% for event in events %}
+      <li>{{ event.timestamp.strftime('%H:%M') }} · {{ event.description }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+{% if checkin_result %}
+<section class="panel" style="margin-bottom: 1.5rem">
+  <h2>Generated plan</h2>
+  <div class="plan-output">{{ checkin_result.plan }}</div>
+  {% if checkin_result.tasks %}
+  <p class="muted" style="margin-top: 1rem">{{ checkin_result.tasks|length }} tasks highlighted. Keep the list honest.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="grid two">
+  <div class="panel">
+    <h2>Evening Reflection</h2>
+    {% set reflection_date = evening_form_state.get('session_date', session.date.isoformat() if session else today.isoformat()) %}
+    <form method="post" action="/daily/evening">
+      <input type="hidden" name="session_date" value="{{ reflection_date }}" />
+      <div>
+        <label for="actual_focus">What actually happened?</label>
+        <textarea id="actual_focus" name="actual_focus" required placeholder="How did you really spend the day?">{{ evening_form_state.get('actual_focus', session.evening_reflection.actual_focus if session and session.evening_reflection else '') }}</textarea>
+      </div>
+      <div>
+        <label for="wins">Wins</label>
+        <textarea id="wins" name="wins" placeholder="Comma or newline separated wins">{{ evening_form_state.get('wins', session.evening_reflection.wins | join(', ') if session and session.evening_reflection else '') }}</textarea>
+      </div>
+      <div>
+        <label for="challenges">Challenges</label>
+        <textarea id="challenges" name="challenges" placeholder="What pushed back?">{{ evening_form_state.get('challenges', session.evening_reflection.challenges | join(', ') if session and session.evening_reflection else '') }}</textarea>
+      </div>
+      <div>
+        <label for="tomorrow_intent">Tomorrow's intent</label>
+        <input
+          type="text"
+          id="tomorrow_intent"
+          name="tomorrow_intent"
+          required
+          value="{{ evening_form_state.get('tomorrow_intent', session.evening_reflection.tomorrow_intent if session and session.evening_reflection else '') }}"
+          placeholder="Set the tone for tomorrow"
+        />
+      </div>
+      <div>
+        <label for="energy_pattern">Energy pattern (HH:MM LEVEL)</label>
+        <textarea id="energy_pattern" name="energy_pattern" placeholder="09:00 3\n14:30 4">{{ evening_form_state.get('energy_pattern', '') }}</textarea>
+      </div>
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
+        <button type="submit">Record reflection</button>
+        <a class="pill" href="/api/daily/reflection" title="View JSON endpoint" style="align-self: center">API</a>
+      </div>
+    </form>
+  </div>
+  <div class="panel">
+    <h2>Session recap</h2>
+    {% if session and session.evening_reflection %}
+    <p class="muted">Reflection recorded for {{ session.date.strftime('%A') }}.</p>
+    <ul>
+      <li><strong>Focus:</strong> {{ session.evening_reflection.actual_focus }}</li>
+      <li><strong>Wins:</strong> {{ session.evening_reflection.wins | join(', ') if session.evening_reflection.wins else '—' }}</li>
+      <li><strong>Challenges:</strong> {{ session.evening_reflection.challenges | join(', ') if session.evening_reflection.challenges else '—' }}</li>
+      <li><strong>Tomorrow:</strong> {{ session.evening_reflection.tomorrow_intent }}</li>
+    </ul>
+    {% else %}
+    <p class="muted">No reflection logged yet. Close the loop tonight.</p>
+    {% endif %}
+
+    {% if session and session.energy_pattern %}
+    <h3 style="margin-top: 1.5rem">Energy samples</h3>
+    <ul class="inline">
+      {% for sample in session.energy_pattern %}
+      <li class="pill">{{ sample[0].strftime('%H:%M') if sample[0] else '' }} · {{ sample[1] }}/5</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+{% if reflection_result %}
+<section class="panel" style="margin-top: 1.5rem">
+  <h2>Reflection saved</h2>
+  <div class="plan-output">{{ reflection_result.message }}</div>
+</section>
+{% endif %}
+
+{% if store_summary %}
+<section class="panel" style="margin-top: 1.5rem">
+  <h2>System snapshot</h2>
+  <ul class="inline">
+    <li class="pill">Sessions {{ store_summary.sessions }}</li>
+    <li class="pill">Events {{ store_summary.events }}</li>
+    <li class="pill">Tasks {{ store_summary.tasks }}</li>
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

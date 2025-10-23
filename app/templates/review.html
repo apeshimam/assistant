@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Weekly Review · Personal Planner{% endblock %}
+{% block content %}
+<section class="panel" style="margin-bottom: 1.5rem">
+  <h2>Weekly pattern analysis</h2>
+  <p class="muted">{{ patterns.summary }}</p>
+  <div class="grid two" style="margin-top: 1rem">
+    <div>
+      <h3>Highlights</h3>
+      {% if patterns.highlights %}
+      <ul>
+        {% for highlight in patterns.highlights %}
+        <li>{{ highlight }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">No highlights yet — capture a few sessions to see trendlines.</p>
+      {% endif %}
+    </div>
+    <div>
+      <h3>Energy trends</h3>
+      {% if patterns.energy_trends %}
+      <ul>
+        {% for trend in patterns.energy_trends %}
+        <li>{{ trend }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">Log more energy samples to unlock insights.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="panel" style="margin-bottom: 1.5rem">
+  <h2>Sessions this week</h2>
+  {% if sessions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Morning focus</th>
+        <th>Energy entries</th>
+        <th>Decisions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for session in sessions %}
+      <tr>
+        <td>{{ session.date.strftime('%a %d %b') }}</td>
+        <td>
+          {% if session.morning_context %}
+          {{ session.morning_context.intended_focus }} ({{ session.morning_context.energy_level }}/5)
+          {% else %}
+          <span class="muted">—</span>
+          {% endif %}
+        </td>
+        <td>{{ session.energy_pattern|length }}</td>
+        <td>{{ session.decisions|length }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No sessions yet. Complete a morning or evening flow to seed the review.</p>
+  {% endif %}
+</section>
+
+<section class="grid two">
+  <div class="panel">
+    <h2>Event log</h2>
+    {% if events %}
+    <ul style="max-height: 260px; overflow-y: auto; padding-right: 0.5rem">
+      {% for event in events %}
+      <li style="margin-bottom: 0.6rem">
+        <div><strong>{{ event.timestamp.strftime('%b %d · %H:%M') }}</strong></div>
+        <div class="muted">{{ event.description }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Once you capture reflections and decisions the timeline will appear here.</p>
+    {% endif %}
+  </div>
+  <div class="panel">
+    <h2>System summary</h2>
+    <ul class="inline">
+      <li class="pill">Sessions {{ summary.sessions }}</li>
+      <li class="pill">Events {{ summary.events }}</li>
+      <li class="pill">Tasks {{ summary.tasks }}</li>
+    </ul>
+    <p class="muted" style="margin-top: 1rem">Use the daily view to add more reflections and capture intentional energy data.</p>
+  </div>
+</section>
+{% endblock %}

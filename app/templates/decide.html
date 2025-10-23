@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Decision Journal · Personal Planner{% endblock %}
+{% block content %}
+<section class="grid two" style="margin-bottom: 1.5rem">
+  <div class="panel">
+    <h2>Decision helper</h2>
+    <p class="muted">Capture the question, context, and options. We'll archive the reasoning and surface related memories.</p>
+    <form method="post" action="/decide">
+      <div>
+        <label for="question">Decision question</label>
+        <input type="text" id="question" name="question" required placeholder="What are you deciding?" value="{{ form_state.get('question', '') }}" />
+      </div>
+      <div>
+        <label for="context_text">Context & stakes</label>
+        <textarea id="context_text" name="context_text" required placeholder="Why does this matter?">{{ form_state.get('context_text', '') }}</textarea>
+      </div>
+      <div>
+        <label for="options">Options (comma or newline separated)</label>
+        <textarea id="options" name="options" required placeholder="Option A\nOption B">{{ form_state.get('options', '') }}</textarea>
+      </div>
+      <div>
+        <label for="chosen_option">Chosen option</label>
+        <input type="text" id="chosen_option" name="chosen_option" placeholder="Optional" value="{{ form_state.get('chosen_option', '') }}" />
+      </div>
+      <div>
+        <label for="reasoning">Reasoning</label>
+        <textarea id="reasoning" name="reasoning" placeholder="What's the thinking behind the choice?">{{ form_state.get('reasoning', '') }}</textarea>
+      </div>
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
+        <button type="submit">Record decision</button>
+        <a class="pill" href="/api/decisions" title="View JSON endpoint" style="align-self: center">API</a>
+      </div>
+    </form>
+  </div>
+  <div class="panel">
+    <h2>Recent decisions</h2>
+    {% if recent_decisions %}
+    <ul style="padding-left: 1rem">
+      {% for decision in recent_decisions %}
+      <li style="margin-bottom: 0.75rem">
+        <div><strong>{{ decision.question }}</strong></div>
+        <div class="muted" style="font-size: 0.8rem">{{ decision.timestamp.strftime('%b %d · %H:%M') }}</div>
+        {% if decision.chosen_option %}<div class="pill" style="margin-top: 0.35rem">Choice: {{ decision.chosen_option }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No decisions logged yet. Use the form to capture your first deliberate choice.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% if decision_result %}
+<section class="panel">
+  <h2>Decision recorded</h2>
+  <p><strong>{{ decision_result.decision.question }}</strong></p>
+  <p class="muted">Stored {{ decision_result.decision.timestamp.strftime('%A %H:%M') }} · options considered: {{ decision_result.decision.options_considered|length }}</p>
+  {% if decision_result.decision.chosen_option %}
+  <p><span class="pill tag-success">Chosen: {{ decision_result.decision.chosen_option }}</span></p>
+  {% endif %}
+  {% if decision_result.decision.reasoning %}
+  <div class="plan-output" style="margin-top: 1rem">{{ decision_result.decision.reasoning }}</div>
+  {% endif %}
+  {% if decision_result.related_context %}
+  <h3 style="margin-top: 1.5rem">Related memories</h3>
+  <ul>
+    {% for memory in decision_result.related_context %}
+    <li>{{ memory }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">No related memories yet — this will grow as the planner learns.</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

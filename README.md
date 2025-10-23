@@ -50,3 +50,30 @@ Feel free to adjust the credentials in both `docker-compose.yml` and your `.env`
 ## Additional resources
 
 - [Personal AI Planner Design Document](docs/personal_ai_planner_design.md)
+
+## Staying up to date with GitHub
+
+Ensure your local checkout tracks the latest code from GitHub before you start working:
+
+1. Confirm that a remote named `origin` is configured. If this repository was cloned fresh, it should already exist. If it is missing, add it with your GitHub URL:
+
+   ```bash
+   git remote add origin https://github.com/<your-username>/assistant.git
+   ```
+
+2. Fetch the newest commits and rebase or fast-forward your local branch so it reflects GitHub's current state:
+
+   ```bash
+   git fetch origin
+   git checkout main  # or the branch you track remotely
+   git pull --ff-only origin main
+   ```
+
+3. For feature work on another branch (for example, `work`), rebase it onto the freshly updated base branch:
+
+   ```bash
+   git checkout work
+   git rebase main
+   ```
+
+Following this flow before making changes guarantees that the repository starts from the latest GitHub revision.
